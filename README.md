@@ -9,6 +9,7 @@ A simple pomodoro CLI app written in Go.
 - [x] visual bar that shrinks with countdown
 
 ### level-up TODOs
+- [ ] play a sound on end
 - [ ] custom time for both pomo and loco sessions
 - [ ] session title optional
 - [ ] notes / reflections optional
