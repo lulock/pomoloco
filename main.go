@@ -36,6 +36,7 @@ func commandWork(args ...string) error {
 	
 	defer timeTicker.Stop()
 	block := strings.Repeat("█", 1500/30)
+	squashed := strings.Repeat("-", 0)
 	minsLeft := 1500 / 60
 	secondsLeft:= 1500 % 60
 	fmt.Printf("\r\033[K%02d:%02d * %v", minsLeft, secondsLeft, block)
@@ -44,10 +45,11 @@ func commandWork(args ...string) error {
 		select {
 		case <- timeTicker.C:
 			block = strings.Repeat("█", i/30)
+			squashed = strings.Repeat("-", (1500/30) - (i/30))
 			minsLeft = i / 60
 			secondsLeft = i % 60
 
-			fmt.Printf("\r\033[K%02d:%02d * %v", minsLeft, secondsLeft, block)
+			fmt.Printf("\r\033[K%02d:%02d * %v%v", minsLeft, secondsLeft, block, squashed)
 			i--
 
 		}
@@ -64,6 +66,7 @@ func commandBreak(args ...string) error {
 	
 	defer timeTicker.Stop()
 	block := strings.Repeat("█", 300/6)
+	squashed := strings.Repeat("-", 0)
 	minsLeft := 300 / 60
 	secondsLeft:= 300 % 60
 	fmt.Printf("\r\033[K%02d:%02d * %v", minsLeft, secondsLeft, block)
@@ -72,10 +75,11 @@ func commandBreak(args ...string) error {
 		select {
 		case <- timeTicker.C:
 			block = strings.Repeat("█", i/6)
+			squashed = strings.Repeat("-", (300/6) - (i/6))
 			minsLeft = i / 60
 			secondsLeft = i % 60
 
-			fmt.Printf("\r\033[K%02d:%02d * %v", minsLeft, secondsLeft, block)
+			fmt.Printf("\r\033[K%02d:%02d * %v%v", minsLeft, secondsLeft, block, squashed)
 			i--
 
 		}
