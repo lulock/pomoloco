@@ -7,6 +7,7 @@ import (
 	"os"
 	"bufio"
 	//"math"
+	"strconv"
 )
 
 type cliCommand struct {
@@ -30,22 +31,38 @@ func commandExit(args ...string) error {
 }
 
 func commandWork(args ...string) error {
-	fmt.Println("Pomo Go Go Go! 25 minutes of focus.")
+	duration := 25
+	// check if duration was passed
+	if len(args[0]) > 0 {
+		
+		d, err := strconv.Atoi(args[0])
+		
+		if err != nil {
+			return err
+		}
+		duration = d
+	}
+
+	fmt.Println(fmt.Sprintf("Pomo Go Go Go! %d minutes of focus.", duration))
 	
 	timeTicker := time.NewTicker(1 * time.Second)
+
+	// we want 60 blocks only
+	durInSeconds := duration * 60 
+	secondsPerBlock := durInSeconds / 60
 	
 	defer timeTicker.Stop()
-	block := strings.Repeat("█", 1500/30)
+	block := strings.Repeat("█", 60)
 	squashed := strings.Repeat("-", 0)
-	minsLeft := 1500 / 60
-	secondsLeft:= 1500 % 60
+	minsLeft := durInSeconds / 60
+	secondsLeft:= durInSeconds % 60
 	fmt.Printf("\r\033[K%02d:%02d * %v", minsLeft, secondsLeft, block)
 
-	for i := 1500; i >= 0; {
+	for i := durInSeconds; i >= 0; {
 		select {
 		case <- timeTicker.C:
-			block = strings.Repeat("█", i/30)
-			squashed = strings.Repeat("-", (1500/30) - (i/30))
+			block = strings.Repeat("█", i/secondsPerBlock)
+			squashed = strings.Repeat("-", (durInSeconds/secondsPerBlock) - (i/secondsPerBlock))
 			minsLeft = i / 60
 			secondsLeft = i % 60
 
