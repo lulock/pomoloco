@@ -11,10 +11,13 @@ A simple pomodoro CLI app written in Go.
 
 ### level-up TODOs
 - [ ] play a sound on end
-- [ ] custom time for both pomo and loco sessions
+- [x] custom time for both pomo and loco sessions
+- [ ] press any key (other than space) to cancel session
+- [ ] press space bar to pause session
 - [ ] session title optional
 - [ ] notes / reflections optional
 - [ ] save sessions and notes in database
+- [ ] refactor as per DRY
 
 ## Contributing
 

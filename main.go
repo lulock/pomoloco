@@ -30,19 +30,25 @@ func commandExit(args ...string) error {
 	return nil
 }
 
-func commandWork(args ...string) error {
-	duration := 25
-	// check if duration was passed
-	if len(args[0]) > 0 {
-		
-		d, err := strconv.Atoi(args[0])
-		
-		if err != nil {
-			return err
-		}
-		duration = d
-	}
+func getDuration(s string) (int, error) {
+	// currently, this function only expects a string indicating minutes
+	// TODO: take a duration like 1h30m and parse using time module
 
+	if len(s) > 0 {	
+		d, err := strconv.Atoi(s)
+		if err != nil {
+			return 0, err
+		}
+		return d, nil	
+	}
+	return 25, nil
+}
+
+func commandWork(args ...string) error {
+	duration, err := getDuration(args[0])
+	if err != nil {
+		return err
+	}
 	fmt.Println(fmt.Sprintf("Pomo Go Go Go! %d minutes of focus.", duration))
 	
 	timeTicker := time.NewTicker(1 * time.Second)
@@ -77,22 +83,29 @@ func commandWork(args ...string) error {
 }
 
 func commandBreak(args ...string) error {
-	fmt.Println("Go loco! 5 minute break.")
+	duration, err := getDuration(args[0])
+	if err != err {
+		return err
+	}
+	fmt.Println(fmt.Sprintf("Go loco! %d minute break.", duration))
 	
 	timeTicker := time.NewTicker(1 * time.Second)
 	
 	defer timeTicker.Stop()
-	block := strings.Repeat("█", 300/6)
+	block := strings.Repeat("█", 60)
+	durInSeconds := duration * 60
+	secondsPerBlock := durInSeconds / 60
+
 	squashed := strings.Repeat("-", 0)
-	minsLeft := 300 / 60
-	secondsLeft:= 300 % 60
+	minsLeft := duration
+	secondsLeft:= durInSeconds % 60
 	fmt.Printf("\r\033[K%02d:%02d * %v", minsLeft, secondsLeft, block)
 
-	for i := 300; i >= 0; {
+	for i := durInSeconds; i >= 0; {
 		select {
 		case <- timeTicker.C:
-			block = strings.Repeat("█", i/6)
-			squashed = strings.Repeat("-", (300/6) - (i/6))
+			block = strings.Repeat("█", i/secondsPerBlock)
+			squashed = strings.Repeat("-", (durInSeconds/secondsPerBlock) - (i/secondsPerBlock))
 			minsLeft = i / 60
 			secondsLeft = i % 60
 
@@ -163,10 +176,22 @@ func main() {
 				if !ok {
 					fmt.Println("unknown command")
 				} else {
-					err := cmd.handler(args)
-					if err != nil {
-						fmt.Println(err)
+					errs := make(chan error, 1)
+					defer close(errs)
+
+					go func() {
+						errs <- cmd.handler(args)
+					}()
+					// later:
+
+					if err := <-errs; err != nil {
+						fmt.Println(err)// handle error
 					}
+
+				//	err := cmd.handler(args)
+				//	if err != nil {
+				//		fmt.Println(err)
+				//	}
 				}
 
 			}
