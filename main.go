@@ -176,19 +176,27 @@ func main() {
 				if !ok {
 					fmt.Println("unknown command")
 				} else {
-					errs := make(chan error, 1)
-					defer close(errs)
+					//errs := make(chan error, 1)
+					//defer close(errs)
 
-					go func() {
-						errs <- cmd.handler(args)
-					}()
+					//go func() {
+					//	errs <- cmd.handler(args)
+					//}()
+					
+				//	bufio.NewReader(os.Stdin).ReadBytes('\n')
+
 					// later:
 
-					if err := <-errs; err != nil {
-						fmt.Println(err)// handle error
-					}
+					//if err := <-errs; err != nil {
+					//	fmt.Println(err)// handle error
+					//}
 
-				//	err := cmd.handler(args)
+					err := cmd.handler(args)
+					if err != nil {
+						fmt.Println(err) 
+					}
+					
+									//	err := cmd.handler(args)
 				//	if err != nil {
 				//		fmt.Println(err)
 				//	}
