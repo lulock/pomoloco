@@ -1,20 +1,7 @@
 package main
 
-// A simple example that shows how to render a progress bar in a "pure"
-// fashion. In this example we bump the progress by 25% every second,
-// maintaining the progress state on our top level model using the progress bar
-// model's ViewAs method only for rendering.
-//
-// The signature for ViewAs is:
-//
-//     func (m Model) ViewAs(percent float64) string
-//
-// So it takes a float between 0 and 1, and renders the progress bar
-// accordingly. When using the progress bar in this "pure" fashion and there's
-// no need to call an Update method.
-//
-// The progress bar is also able to animate itself, however. For details see
-// the progress-animated example.
+// Building upon Bubbleatea's simple rendering of a progrerss bar in a "pure" fashion. 
+// This is a pomodoro app that generates visual countdowns for pomo "focus" sessions and loco "breaks"
 
 import (
 	"fmt"
@@ -43,7 +30,9 @@ func main() {
 		sessionType = os.Args[1]
 	}
 	
-	prog := progress.New(progress.WithScaledGradient("#FF7CCB", "#FDFF8C"), progress.WithoutPercentage())
+	//prog := progress.New(progress.WithScaledGradient("#ff9933", "#6600cc"), progress.WithoutPercentage())
+	prog := progress.New(progress.WithScaledGradient("#99ff99", "#ff99ff"), progress.WithoutPercentage())
+	//prog := progress.New(progress.WithScaledGradient("#FF7CCB", "#FDFF8C"), progress.WithoutPercentage())
 	prog.SetPercent(1.0)
 	durStr := "30s"
 	
@@ -87,7 +76,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.WindowSizeMsg:
-		m.progress.Width = msg.Width - padding*2 - 4
+		m.progress.Width = msg.Width - padding*3 - 6
 		if m.progress.Width > maxWidth {
 			m.progress.Width = maxWidth
 		}
@@ -111,9 +100,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	pad := strings.Repeat(" ", padding)
+	mins := m.countdown / time.Minute
+	sec := (m.countdown % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
+	time := fmt.Sprintf("%02d:%02d", mins, sec)
 	return "\n" +
 		pad + m.message + "\n\n" +
-		pad + m.countdown.String() + pad +  "*" +
+		pad + time + pad +  "*" +
 		pad + m.progress.ViewAs(m.percent) + "\n\n" +
 		pad + helpStyle("Press any key to quit")
 }
