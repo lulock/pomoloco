@@ -1,7 +1,11 @@
+/*
+Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+
+*/
 package main
 
 import "github.com/lulock/pomoloco/cmd"
 
 func main() {
-  cmd.Execute()
+	cmd.Execute()
 }
