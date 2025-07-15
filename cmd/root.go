@@ -29,11 +29,15 @@ var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
 type tickMsg time.Time
 
 type model struct {
-	message string
+	pomo bool
+	pomoMessage string
+	locoMessage string
 	duration time.Duration
-	countdown time.Duration
+	pomoCountdown time.Duration
+	locoCountdown time.Duration
 	percent  float64
-	progress progress.Model
+	pomoProgress progress.Model
+	locoProgress progress.Model
 }
 
 func (m model) Init() tea.Cmd {
@@ -46,20 +50,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.WindowSizeMsg:
-		m.progress.Width = msg.Width - padding*3 - 6
-		if m.progress.Width > maxWidth {
-			m.progress.Width = maxWidth
+		
+		m.pomoProgress.Width = msg.Width - padding * 3 - 6
+		m.locoProgress.Width = msg.Width - padding * 3 - 6
+		if m.pomoProgress.Width > maxWidth || m.locoProgress.Width > maxWidth {
+			m.pomoProgress.Width, m.locoProgress.Width = maxWidth, maxWidth
 		}
 		return m, nil
 
 	case tickMsg:
-
+		if m.pomo {
+			m.pomoCountdown -= 1 * time.Second
+		} else {
+			m.locoCountdown -= 1 * time.Second
+		}
 		m.percent -= float64(1.0/m.duration.Seconds())
-		m.countdown -= 1*time.Second
 		if m.percent < 0.0 {
-			m.percent = 0.0
-			m.countdown = 0 * time.Second
-			return m, tea.Quit
+			if m.pomo {
+				m.pomo = false
+				m.percent = 1.0
+				m.duration = m.locoCountdown
+				m.pomoCountdown = 0 * time.Second
+			} else {
+				m.percent = 0.0
+				m.locoCountdown = 0 * time.Second
+				return m, tea.Quit
+			}
 		}
 		return m, tickCmd()
 
@@ -68,15 +84,31 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
+// the main view should call the appropriate subview
 func (m model) View() string {
+	var message string
+	var mins time.Duration
+	var sec time.Duration
+	var progr string
+	
+	if m.pomo {
+		message = m.pomoMessage
+		mins = m.pomoCountdown / time.Minute
+		sec = (m.pomoCountdown % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
+		progr = m.pomoProgress.ViewAs(m.percent)
+	} else {
+		message = m.locoMessage
+		mins = m.locoCountdown / time.Minute
+		sec = (m.locoCountdown % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
+		progr = m.locoProgress.ViewAs(m.percent)
+	}
+	
 	pad := strings.Repeat(" ", padding)
-	mins := m.countdown / time.Minute
-	sec := (m.countdown % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
 	time := fmt.Sprintf("%02d:%02d", mins, sec)
 	return "\n" +
-		pad + m.message + "\n\n" +
+		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
-		pad + m.progress.ViewAs(m.percent) + "\n\n" +
+		pad + progr + "\n\n" +
 		pad + helpStyle("Press any key to quit")
 }
 
@@ -105,37 +137,27 @@ var rootCmd = &cobra.Command{
 		locoTime, _ := cmd.Flags().GetString("loco")
 		fmt.Printf("pomo for %s mins and loco for %s\n", pomoTime, locoTime)
 	//prog := progress.New(progress.WithScaledGradient("#ff9933", "#6600cc"), progress.WithoutPercentage())
-		prog := progress.New(progress.WithScaledGradient("#99ff99", "#ff99ff"), progress.WithoutPercentage())
+		pomoProg := progress.New(progress.WithScaledGradient("#99ff99", "#ff99ff"), progress.WithoutPercentage())
+		locoProg := progress.New(progress.WithScaledGradient("#ff99ff", "#99ff99"), progress.WithoutPercentage())
 	//prog := progress.New(progress.WithScaledGradient("#FF7CCB", "#FDFF8C"), progress.WithoutPercentage())
-		prog.SetPercent(1.0)
-		durStr := pomoTime + "m"
-		text := fmt.Sprintf("Go go go! %s minutes of focus.", pomoTime)
-		dur, err := time.ParseDuration(durStr)
+		pomoProg.SetPercent(1.0)
+		locoProg.SetPercent(1.0)
+		pomoText := fmt.Sprintf("Go go go! %s minutes of focus.", pomoTime)
+		locoText := fmt.Sprintf("Go loco! %s-minute break.", locoTime)
+		pomoDur, err := time.ParseDuration(pomoTime + "m")
 		if err != nil {
 			fmt.Println("Damn...", err)
 			os.Exit(1)
 		}
-		if _, err = tea.NewProgram(model{message: text, duration: dur, countdown: dur, percent: 1.0, progress: prog}).Run(); err != nil {
-			fmt.Println("Oh no!", err)
-			os.Exit(1)
-		}
-		
-		prog = progress.New(progress.WithScaledGradient("#ff99ff", "#99ff99"), progress.WithoutPercentage())
-	//prog := progress.New(progress.WithScaledGradient("#FF7CCB", "#FDFF8C"), progress.WithoutPercentage())
-		prog.SetPercent(1.0)
-		durStr = locoTime + "m"
-		text = fmt.Sprintf("Go loco! %s-minute break.", locoTime)
-		dur, err = time.ParseDuration(durStr)
+		locoDur, err := time.ParseDuration(locoTime + "m")
 		if err != nil {
 			fmt.Println("Damn...", err)
 			os.Exit(1)
 		}
-		if _, err = tea.NewProgram(model{message: text, duration: dur, countdown: dur, percent: 1.0, progress: prog}).Run(); err != nil {
+		if _, err = tea.NewProgram(model{pomo: true, pomoMessage: pomoText, locoMessage: locoText, duration: pomoDur, pomoCountdown: pomoDur, locoCountdown: locoDur, percent: 1.0, pomoProgress: pomoProg, locoProgress: locoProg}).Run(); err != nil {
 			fmt.Println("Oh no!", err)
 			os.Exit(1)
-		}
-
-
+		}	
 	},
 }
 
