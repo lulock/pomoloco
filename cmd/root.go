@@ -8,6 +8,7 @@ import (
 	"os"
 	"fmt"
 	"github.com/spf13/cobra"
+//	"github.com/spf13/viper"
 	"strings"
 	"time"
 
@@ -32,12 +33,12 @@ type model struct {
 	pomo bool
 	pomoMessage string
 	locoMessage string
-	duration time.Duration
 	pomoCountdown time.Duration
 	locoCountdown time.Duration
-	percent  float64
 	pomoProgress progress.Model
 	locoProgress progress.Model
+	duration time.Duration
+	percent  float64
 }
 
 func (m model) Init() tea.Cmd {
@@ -118,6 +119,15 @@ func tickCmd() tea.Cmd {
 	})
 }
 
+func themeLookup(theme string) (string, string) {
+	var colourOne string
+	var colourTwo string
+	if theme == "watermelon" {
+		colourOne = "#99ff99"
+		colourTwo = "#ff99ff"
+	}
+	return colourOne, colourTwo 
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -133,13 +143,15 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+		// TODO: a lot of duplicate code here that needs refactoring!
 		pomoTime, _ := cmd.Flags().GetString("pomo")
 		locoTime, _ := cmd.Flags().GetString("loco")
+		
+
+		colourOne, colourTwo := themeLookup("watermelon")
 		fmt.Printf("pomo for %s mins and loco for %s\n", pomoTime, locoTime)
-	//prog := progress.New(progress.WithScaledGradient("#ff9933", "#6600cc"), progress.WithoutPercentage())
-		pomoProg := progress.New(progress.WithScaledGradient("#99ff99", "#ff99ff"), progress.WithoutPercentage())
-		locoProg := progress.New(progress.WithScaledGradient("#ff99ff", "#99ff99"), progress.WithoutPercentage())
-	//prog := progress.New(progress.WithScaledGradient("#FF7CCB", "#FDFF8C"), progress.WithoutPercentage())
+		pomoProg := progress.New(progress.WithScaledGradient(colourOne, colourTwo), progress.WithoutPercentage())
+		locoProg := progress.New(progress.WithScaledGradient(colourTwo, colourOne), progress.WithoutPercentage())
 		pomoProg.SetPercent(1.0)
 		locoProg.SetPercent(1.0)
 		pomoText := fmt.Sprintf("Go go go! %s minutes of focus.", pomoTime)
@@ -163,6 +175,7 @@ var rootCmd = &cobra.Command{
 
 var pomoduration string
 var locoduration string
+var theme string
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -183,6 +196,7 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.PersistentFlags().StringVarP(&pomoduration, "pomo", "p", "", "25")
-	rootCmd.PersistentFlags().StringVarP(&locoduration, "loco", "l", "", "5")
+	rootCmd.PersistentFlags().StringVarP(&pomoduration, "pomo", "p", "25", "duration of focus")
+	rootCmd.PersistentFlags().StringVarP(&locoduration, "loco", "l", "5", "duration of break")
+	rootCmd.PersistentFlags().StringVarP(&theme, "theme", "t", "", "watermenlon")
 }
