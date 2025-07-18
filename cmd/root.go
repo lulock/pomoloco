@@ -8,7 +8,7 @@ import (
 	"os"
 	"fmt"
 	"github.com/spf13/cobra"
-//	"github.com/spf13/viper"
+	"github.com/spf13/viper"
 	"strings"
 	"time"
 
@@ -125,6 +125,13 @@ func themeLookup(theme string) (string, string) {
 	if theme == "watermelon" {
 		colourOne = "#99ff99"
 		colourTwo = "#ff99ff"
+	} else if theme == "solarized" {
+
+		colourOne = "#2aa198"
+		colourTwo = "#b58900"
+	} else {
+		colourOne = "#6600cc"
+		colourTwo = "#ff9933"
 	}
 	return colourOne, colourTwo 
 }
@@ -147,8 +154,12 @@ var rootCmd = &cobra.Command{
 		pomoTime, _ := cmd.Flags().GetString("pomo")
 		locoTime, _ := cmd.Flags().GetString("loco")
 		
-
-		colourOne, colourTwo := themeLookup("watermelon")
+	
+		conftheme := viper.GetString("theme")
+		fmt.Println(conftheme)
+		
+		//conftheme, _ = cmd.Flags().GetString("theme")
+		colourOne, colourTwo := themeLookup(conftheme)
 		fmt.Printf("pomo for %s mins and loco for %s\n", pomoTime, locoTime)
 		pomoProg := progress.New(progress.WithScaledGradient(colourOne, colourTwo), progress.WithoutPercentage())
 		locoProg := progress.New(progress.WithScaledGradient(colourTwo, colourOne), progress.WithoutPercentage())
@@ -198,5 +209,12 @@ func init() {
 	// when this action is called directly.
 	rootCmd.PersistentFlags().StringVarP(&pomoduration, "pomo", "p", "25", "duration of focus")
 	rootCmd.PersistentFlags().StringVarP(&locoduration, "loco", "l", "5", "duration of break")
-	rootCmd.PersistentFlags().StringVarP(&theme, "theme", "t", "", "watermenlon")
+	rootCmd.PersistentFlags().StringVarP(&theme, "theme", "t", "", "watermelon")
+
+	viper.BindPFlag("theme", rootCmd.PersistentFlags().Lookup("theme"))
+	viper.AddConfigPath(".")
+	viper.SetConfigName("config") // Register config file name (no extension)
+	viper.SetConfigType("yaml")   // Look for specific type
+	viper.ReadInConfig()
+		
 }
