@@ -35,6 +35,17 @@ const (
 )
 
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
+var quoteStyle = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.Color("#FAFAFA")).
+	Border(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("#626262")).
+	Padding(1).
+	PaddingLeft(2).
+	PaddingRight(2).
+	MarginLeft(2).
+	MarginRight(2).
+	Width(maxWidth/2).Render
 
 type tickMsg time.Time
 
@@ -117,7 +128,7 @@ func (m model) View() string {
 	pad := strings.Repeat(" ", padding)
 	time := fmt.Sprintf("%02d:%02d", mins, sec)
 	return "\n" +
-		pad + m.randomQuote[0].Quote + fmt.Sprintf("  --%s", m.randomQuote[0].Author) + "\n\n" +
+		quoteStyle(m.randomQuote[0].Quote + fmt.Sprintf("\n  -- %s", m.randomQuote[0].Author)) + "\n\n" +
 		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
 		pad + progr + "\n\n" +
@@ -167,6 +178,7 @@ var rootCmd = &cobra.Command{
 		
 	
 		conftheme := viper.GetString("theme")
+	
 		resp, err := http.Get("https://zenquotes.io/api/random")
 		if err != nil {
 			fmt.Println("Ooops! No quote could be fetched.")
@@ -183,6 +195,7 @@ var rootCmd = &cobra.Command{
 		
 		//conftheme, _ = cmd.Flags().GetString("theme")
 		colourOne, colourTwo := themeLookup(conftheme)
+	
 		//fmt.Printf("pomo for %s mins and loco for %s\n", pomoTime, locoTime)
 		pomoProg := progress.New(progress.WithScaledGradient(colourOne, colourTwo), progress.WithoutPercentage())
 		locoProg := progress.New(progress.WithScaledGradient(colourTwo, colourOne), progress.WithoutPercentage())
