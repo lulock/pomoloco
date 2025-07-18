@@ -16,7 +16,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"net/http"
+	"io"
+	"encoding/json"
 )
+
+type DailyQuote []struct {
+	Quote string `json:"q"`
+	Author string `json:"a"`
+	H string `json:"h"`
+}
 
 // Building upon Bubbleatea's simple rendering of a progrerss bar in a "pure" fashion. 
 // This is a pomodoro app that generates visual countdowns for pomo "focus" sessions and loco "breaks"
@@ -30,6 +39,7 @@ var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
 type tickMsg time.Time
 
 type model struct {
+	randomQuote DailyQuote
 	pomo bool
 	pomoMessage string
 	locoMessage string
@@ -107,6 +117,7 @@ func (m model) View() string {
 	pad := strings.Repeat(" ", padding)
 	time := fmt.Sprintf("%02d:%02d", mins, sec)
 	return "\n" +
+		pad + m.randomQuote[0].Quote + fmt.Sprintf("  --%s", m.randomQuote[0].Author) + "\n\n" +
 		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
 		pad + progr + "\n\n" +
@@ -156,11 +167,23 @@ var rootCmd = &cobra.Command{
 		
 	
 		conftheme := viper.GetString("theme")
-		fmt.Println(conftheme)
+		resp, err := http.Get("https://zenquotes.io/api/random")
+		if err != nil {
+			fmt.Println("Ooops! No quote could be fetched.")
+		}
+
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+
+		dat := DailyQuote{}
+		err = json.Unmarshal(body, &dat)
+		if err != nil {
+			fmt.Println("could not unmarshal??")
+		}
 		
 		//conftheme, _ = cmd.Flags().GetString("theme")
 		colourOne, colourTwo := themeLookup(conftheme)
-		fmt.Printf("pomo for %s mins and loco for %s\n", pomoTime, locoTime)
+		//fmt.Printf("pomo for %s mins and loco for %s\n", pomoTime, locoTime)
 		pomoProg := progress.New(progress.WithScaledGradient(colourOne, colourTwo), progress.WithoutPercentage())
 		locoProg := progress.New(progress.WithScaledGradient(colourTwo, colourOne), progress.WithoutPercentage())
 		pomoProg.SetPercent(1.0)
@@ -177,7 +200,7 @@ var rootCmd = &cobra.Command{
 			fmt.Println("Damn...", err)
 			os.Exit(1)
 		}
-		if _, err = tea.NewProgram(model{pomo: true, pomoMessage: pomoText, locoMessage: locoText, duration: pomoDur, pomoCountdown: pomoDur, locoCountdown: locoDur, percent: 1.0, pomoProgress: pomoProg, locoProgress: locoProg}).Run(); err != nil {
+		if _, err = tea.NewProgram(model{ randomQuote: dat, pomo: true, pomoMessage: pomoText, locoMessage: locoText, duration: pomoDur, pomoCountdown: pomoDur, locoCountdown: locoDur, percent: 1.0, pomoProgress: pomoProg, locoProgress: locoProg}).Run(); err != nil {
 			fmt.Println("Oh no!", err)
 			os.Exit(1)
 		}	
