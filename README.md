@@ -1,6 +1,8 @@
 # Pomoloco :tomato:
 A simple pomodoro CLI app written in Go.
 
+![Animated progress bar counting down from right (green) to left (pink) with motivational quote.](pomo.gif)
+
 ## Roadmap
 ### mvp TODOs
 - [x] pomo command: default 25-minute work session
@@ -10,9 +12,11 @@ A simple pomodoro CLI app written in Go.
 - [x] visual bar that shrinks with countdown
 
 ### level-up TODOs
+- [x] bubbletea? yes
 - [ ] play a sound on end
 - [x] custom time for both pomo and loco sessions
-- [ ] press any key (other than space) to cancel session
+- [x] press any key (other than space) to cancel session
+- [x] fetch random motivational quote from zenquotes.io
 - [ ] press space bar to pause session
 - [ ] session title optional
 - [ ] notes / reflections optional
