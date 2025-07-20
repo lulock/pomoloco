@@ -112,6 +112,13 @@ func (m model) View() string {
 	var mins time.Duration
 	var sec time.Duration
 	var progr string
+	var quote string
+
+	if len(m.randomQuote) > 0{
+		quote = quoteStyle(m.randomQuote[0].Quote + fmt.Sprintf("\n  -- %s", m.randomQuote[0].Author)) + "\n\n"
+	} else {
+		quote = ""
+	}
 	
 	if m.pomo {
 		message = m.pomoMessage
@@ -128,7 +135,7 @@ func (m model) View() string {
 	pad := strings.Repeat(" ", padding)
 	time := fmt.Sprintf("%02d:%02d", mins, sec)
 	return "\n" +
-		quoteStyle(m.randomQuote[0].Quote + fmt.Sprintf("\n  -- %s", m.randomQuote[0].Author)) + "\n\n" +
+		quote +
 		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
 		pad + progr + "\n\n" +
@@ -178,21 +185,21 @@ var rootCmd = &cobra.Command{
 		
 	
 		conftheme := viper.GetString("theme")
-	
-		resp, err := http.Get("https://zenquotes.io/api/random")
-		if err != nil {
-			fmt.Println("Ooops! No quote could be fetched.")
-		}
-
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
 
 		dat := DailyQuote{}
-		err = json.Unmarshal(body, &dat)
+
+		resp, err := http.Get("https://zenquotes.io/api/random")
+
 		if err != nil {
-			fmt.Println("could not unmarshal??")
+			// offline mode ... dat just stays empty for now
+		} else {
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			err = json.Unmarshal(body, &dat)
+			if err != nil {
+				fmt.Println("could not unmarshal??")
+			}	
 		}
-		
 		//conftheme, _ = cmd.Flags().GetString("theme")
 		colourOne, colourTwo := themeLookup(conftheme)
 	
