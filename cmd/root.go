@@ -151,14 +151,26 @@ func tickCmd() tea.Cmd {
 func themeLookup(theme string) (string, string) {
 	var colourOne string
 	var colourTwo string
-	if theme == "watermelon" {
+	switch theme {
+	case "watermelon":
 		colourOne = "#99ff99"
 		colourTwo = "#ff99ff"
-	} else if theme == "solarized" {
-
+	case "solarized":
 		colourOne = "#2aa198"
 		colourTwo = "#b58900"
-	} else {
+	case "river":
+		colourOne = "#43cea2"
+		colourTwo = "#185a9d"
+	case "shore":
+		colourOne = "#ffd194"
+		colourTwo = "#70e1f5"
+	case "beach":
+		colourOne = "#ffd194"
+		colourTwo = "#70e1f5"
+	case "moonrise":
+		colourOne = "#dae2f8"
+		colourTwo = "#d6a4a4"
+	default:
 		colourOne = "#6600cc"
 		colourTwo = "#ff9933"
 	}
