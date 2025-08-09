@@ -14,7 +14,9 @@ import (
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	//"github.com/charmbracelet/lipgloss"
+
+	"github.com/lulock/pomoloco/internal/styles"
 
 	"net/http"
 	"io"
@@ -34,18 +36,18 @@ const (
 	maxWidth = 80
 )
 
-var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
-var quoteStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(lipgloss.Color("#FAFAFA")).
-	Border(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("#626262")).
-	Padding(1).
-	PaddingLeft(2).
-	PaddingRight(2).
-	MarginLeft(2).
-	MarginRight(2).
-	Width(maxWidth/2).Render
+//var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
+//var quoteStyle = lipgloss.NewStyle().
+	// Bold(true).
+	// Foreground(lipgloss.Color("#FAFAFA")).
+	// Border(lipgloss.NormalBorder()).
+	// BorderForeground(lipgloss.Color("#626262")).
+	// Padding(1).
+	// PaddingLeft(2).
+	// PaddingRight(2).
+	// MarginLeft(2).
+	// MarginRight(2).
+	// Width(maxWidth/2).Render
 
 type tickMsg time.Time
 
@@ -115,7 +117,7 @@ func (m model) View() string {
 	var quote string
 
 	if len(m.randomQuote) > 0{
-		quote = quoteStyle(m.randomQuote[0].Quote + fmt.Sprintf("\n  -- %s", m.randomQuote[0].Author)) + "\n\n"
+		quote = styles.QuoteStyle(m.randomQuote[0].Quote + fmt.Sprintf("\n  -- %s", m.randomQuote[0].Author)) + "\n\n"
 	} else {
 		quote = ""
 	}
@@ -139,7 +141,7 @@ func (m model) View() string {
 		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
 		pad + progr + "\n\n" +
-		pad + helpStyle("Press any key to quit")
+		pad + styles.HelpStyle("Press any key to quit")
 }
 
 func tickCmd() tea.Cmd {
