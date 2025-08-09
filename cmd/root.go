@@ -14,7 +14,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	//"github.com/charmbracelet/lipgloss"
 
 	"github.com/lulock/pomoloco/internal/styles"
 
@@ -35,19 +34,6 @@ const (
 	padding  = 2
 	maxWidth = 80
 )
-
-//var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
-//var quoteStyle = lipgloss.NewStyle().
-	// Bold(true).
-	// Foreground(lipgloss.Color("#FAFAFA")).
-	// Border(lipgloss.NormalBorder()).
-	// BorderForeground(lipgloss.Color("#626262")).
-	// Padding(1).
-	// PaddingLeft(2).
-	// PaddingRight(2).
-	// MarginLeft(2).
-	// MarginRight(2).
-	// Width(maxWidth/2).Render
 
 type tickMsg time.Time
 
@@ -150,35 +136,6 @@ func tickCmd() tea.Cmd {
 	})
 }
 
-func themeLookup(theme string) (string, string) {
-	var colourOne string
-	var colourTwo string
-	switch theme {
-	case "watermelon":
-		colourOne = "#99ff99"
-		colourTwo = "#ff99ff"
-	case "solarized":
-		colourOne = "#2aa198"
-		colourTwo = "#b58900"
-	case "river":
-		colourOne = "#43cea2"
-		colourTwo = "#185a9d"
-	case "shore":
-		colourOne = "#ffd194"
-		colourTwo = "#70e1f5"
-	case "beach":
-		colourOne = "#ffd194"
-		colourTwo = "#70e1f5"
-	case "moonrise":
-		colourOne = "#dae2f8"
-		colourTwo = "#d6a4a4"
-	default:
-		colourOne = "#6600cc"
-		colourTwo = "#ff9933"
-	}
-	return colourOne, colourTwo 
-}
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "pomoloco",
@@ -195,13 +152,12 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: a lot of duplicate code here that needs refactoring!
 		pomoTime, _ := cmd.Flags().GetString("pomo")
-		locoTime, _ := cmd.Flags().GetString("loco")
-		
+		locoTime, _ := cmd.Flags().GetString("loco")	
 	
 		conftheme := viper.GetString("theme")
-
+		theme := styles.ThemeLookup(conftheme)
+		
 		dat := DailyQuote{}
-
 		resp, err := http.Get("https://zenquotes.io/api/random")
 
 		if err != nil {
@@ -214,12 +170,9 @@ var rootCmd = &cobra.Command{
 				fmt.Println("could not unmarshal??")
 			}	
 		}
-		//conftheme, _ = cmd.Flags().GetString("theme")
-		colourOne, colourTwo := themeLookup(conftheme)
 	
-		//fmt.Printf("pomo for %s mins and loco for %s\n", pomoTime, locoTime)
-		pomoProg := progress.New(progress.WithScaledGradient(colourOne, colourTwo), progress.WithoutPercentage())
-		locoProg := progress.New(progress.WithScaledGradient(colourTwo, colourOne), progress.WithoutPercentage())
+		pomoProg := progress.New(progress.WithScaledGradient(theme.ColourOne, theme.ColourTwo), progress.WithoutPercentage())
+		locoProg := progress.New(progress.WithScaledGradient(theme.ColourTwo, theme.ColourOne), progress.WithoutPercentage())
 		pomoProg.SetPercent(1.0)
 		locoProg.SetPercent(1.0)
 		pomoText := fmt.Sprintf("Go go go! %s minutes of focus.", pomoTime)
