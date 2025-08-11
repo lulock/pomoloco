@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"io"
 	"encoding/json"
+	"github.com/gen2brain/beeep"
 )
 
 type DailyQuote []struct {
@@ -81,9 +82,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.percent = 1.0
 				m.duration = m.locoCountdown
 				m.pomoCountdown = 0 * time.Second
+				
+				beeep.AppName = "Pomoloco"
+				// TODO: extract as notification function
+				err := beeep.Notify("Times up!", "Pomo session done.", "testdata/warning.png")
+				if err != nil {
+				    panic(err)
+				}
 			} else {
 				m.percent = 0.0
 				m.locoCountdown = 0 * time.Second
+
+				err := beeep.Notify("Times up!", "Break is over.", "testdata/warning.png")
+				if err != nil {
+				    panic(err)
+				}
+
 				return m, tea.Quit
 			}
 		}
@@ -151,6 +165,7 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: a lot of duplicate code here that needs refactoring!
+
 		pomoTime, _ := cmd.Flags().GetString("pomo")
 		locoTime, _ := cmd.Flags().GetString("loco")	
 	
