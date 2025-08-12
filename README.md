@@ -12,12 +12,14 @@ A simple pomodoro CLI app written in Go.
 - [x] visual bar that shrinks with countdown
 
 ### level-up TODOs
-- [x] bubbletea? yes
-- [ ] play a sound on end
+- [x] bubbletea? lipgloss? yes
+- [x] notification on end (sound?)
 - [x] custom time for both pomo and loco sessions
 - [x] press any key (other than space) to cancel session
 - [x] fetch random motivational quote from zenquotes.io
 - [ ] press space bar to pause session
+- [ ] skip to next session
+- [ ] loop pomo-loco sessions
 - [ ] session title optional
 - [ ] notes / reflections optional
 - [ ] save sessions and notes in database
