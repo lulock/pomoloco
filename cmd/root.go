@@ -41,16 +41,83 @@ type tickMsg time.Time
 type model struct {
 	randomQuote DailyQuote
 	pomo bool
-	pomoMessage string
-	locoMessage string
-	pomoCountdown time.Duration
-	locoCountdown time.Duration
-	pomoProgress progress.Model
-	locoProgress progress.Model
-	duration time.Duration
-	percent  float64
+	message string
+	pomoDuration time.Duration
+	locoDuration time.Duration
+	start time.Time
+	timeLeft time.Duration
+	progressBar progress.Model
+	percent float64
 }
 
+// type model struct {
+// 	randomQuote DailyQuote
+// 	pomo bool
+//
+// 	pomoMessage string
+// 	locoMessage string
+// 	initPomoCountdown time.Duration
+// 	initLocoCountdown time.Duration
+// 	pomoCountdown time.Duration
+// 	locoCountdown time.Duration
+// 	pomoProgress progress.Model
+// 	locoProgress progress.Model
+// 	duration time.Duration
+// 	percent  float64
+// }
+//
+func newModel(quote DailyQuote, pomoDur, locoDur time.Duration, theme styles.Theme) model {
+	pomoText := fmt.Sprintf("Go go go! %s minutes of focus.", 25)
+//	locoText := fmt.Sprintf("Go loco! %s-minute break.", 5)
+
+	prog := progress.New(progress.WithScaledGradient(theme.ColourOne, theme.ColourTwo), progress.WithoutPercentage())
+
+	prog.SetPercent(1.0)
+
+	m := model{ 
+		randomQuote: quote, 
+		pomo: true, 
+		message: pomoText, 
+		pomoDuration: pomoDur, 
+		locoDuration: locoDur,
+		timeLeft: pomoDur,
+		progressBar: prog,
+		percent: 1.0,
+		start: time.Now(),
+	}
+
+	return m
+
+}
+
+func (m *model) nextSession() {
+	session := "Pomodoro session"
+	beeep.AppName = "Pomoloco"
+	m.percent = 1.0
+	if m.pomo {
+		session = "Pomodoro session"
+		m.pomo = false
+		m.timeLeft = m.locoDuration
+		m.message = "Go loco! Time for a break."
+	} else {
+		session = "Break"
+		m.pomo = true
+		m.timeLeft = m.pomoDuration
+		m.message = "Go go go! Time to focus."
+	}
+
+	m.start = time.Now()
+
+	err := beeep.Notify("Times up!", fmt.Sprintf("%s is over.", session), "./internal/imgs/catmato.png")
+
+	if err != nil {
+		panic(err)
+	}
+
+} 
+
+
+// because m implements Init from the tea.Model interface ... it's a tea.Model 
 func (m model) Init() tea.Cmd {
 	return tickCmd()
 }
@@ -58,48 +125,42 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		return m, tea.Quit
+		 // Cool, what was the actual key pressed?
+        	switch msg.String() {
+		// These keys should exit the program.
+        	case "ctrl+c", "q":
+            		return m, tea.Quit
+
+		case "n":
+			m.nextSession()
+			return m, nil
+		default:
+			return m, nil
+		}
 
 	case tea.WindowSizeMsg:
 		
-		m.pomoProgress.Width = msg.Width - padding * 3 - 6
-		m.locoProgress.Width = msg.Width - padding * 3 - 6
-		if m.pomoProgress.Width > maxWidth || m.locoProgress.Width > maxWidth {
-			m.pomoProgress.Width, m.locoProgress.Width = maxWidth, maxWidth
+		m.progressBar.Width = msg.Width - padding * 3 - 6
+
+		if m.progressBar.Width > maxWidth {
+			m.progressBar.Width = maxWidth
 		}
+
 		return m, nil
 
 	case tickMsg:
+		m.timeLeft -= 1 * time.Second
+		
 		if m.pomo {
-			m.pomoCountdown -= 1 * time.Second
+			m.percent -= float64(1.0/m.pomoDuration.Seconds())
 		} else {
-			m.locoCountdown -= 1 * time.Second
+
+			m.percent -= float64(1.0/m.locoDuration.Seconds())
 		}
-		m.percent -= float64(1.0/m.duration.Seconds())
-		if m.percent < 0.0 {
-			if m.pomo {
-				m.pomo = false
-				m.percent = 1.0
-				m.duration = m.locoCountdown
-				m.pomoCountdown = 0 * time.Second
-				
-				beeep.AppName = "Pomoloco"
-				// TODO: extract as notification function
-				err := beeep.Notify("Times up!", "Pomo session done.", "testdata/warning.png")
-				if err != nil {
-				    panic(err)
-				}
-			} else {
-				m.percent = 0.0
-				m.locoCountdown = 0 * time.Second
 
-				err := beeep.Notify("Times up!", "Break is over.", "testdata/warning.png")
-				if err != nil {
-				    panic(err)
-				}
-
-				return m, tea.Quit
-			}
+		if m.percent <= 0.0 {
+			fmt.Println("OH!")
+			m.nextSession()
 		}
 		return m, tickCmd()
 
@@ -122,17 +183,10 @@ func (m model) View() string {
 		quote = ""
 	}
 	
-	if m.pomo {
-		message = m.pomoMessage
-		mins = m.pomoCountdown / time.Minute
-		sec = (m.pomoCountdown % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
-		progr = m.pomoProgress.ViewAs(m.percent)
-	} else {
-		message = m.locoMessage
-		mins = m.locoCountdown / time.Minute
-		sec = (m.locoCountdown % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
-		progr = m.locoProgress.ViewAs(m.percent)
-	}
+	message = m.message
+	mins = m.timeLeft / time.Minute
+	sec = (m.timeLeft % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
+	progr = m.progressBar.ViewAs(m.percent)
 	
 	pad := strings.Repeat(" ", padding)
 	time := fmt.Sprintf("%02d:%02d", mins, sec)
@@ -141,7 +195,7 @@ func (m model) View() string {
 		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
 		pad + progr + "\n\n" +
-		pad + styles.HelpStyle("Press any key to quit")
+		pad + styles.HelpStyle("Press q or ctrl-c to quit * press n to skip to next")
 }
 
 func tickCmd() tea.Cmd {
@@ -158,7 +212,7 @@ var rootCmd = &cobra.Command{
 	Make each pomodoro count by writing a summary or reflection. 
 	Markdown files will be generated for each reflection and saved in your directory of choice.
 	Example usage: 
-		pomodoro pomo=25 loco=5 marinara=3
+		pomodoro --pomo=25 --loco=5 --theme=watermelon
 
 	focus for 25 minutes followed by a break of 5 minutes 3 times before prompted to write a reflection.`,
 	// Uncomment the following line if your bare application
@@ -168,7 +222,7 @@ var rootCmd = &cobra.Command{
 
 		pomoTime, _ := cmd.Flags().GetString("pomo")
 		locoTime, _ := cmd.Flags().GetString("loco")	
-	
+
 		conftheme := viper.GetString("theme")
 		theme := styles.ThemeLookup(conftheme)
 		
@@ -186,23 +240,21 @@ var rootCmd = &cobra.Command{
 			}	
 		}
 	
-		pomoProg := progress.New(progress.WithScaledGradient(theme.ColourOne, theme.ColourTwo), progress.WithoutPercentage())
-		locoProg := progress.New(progress.WithScaledGradient(theme.ColourTwo, theme.ColourOne), progress.WithoutPercentage())
-		pomoProg.SetPercent(1.0)
-		locoProg.SetPercent(1.0)
-		pomoText := fmt.Sprintf("Go go go! %s minutes of focus.", pomoTime)
-		locoText := fmt.Sprintf("Go loco! %s-minute break.", locoTime)
 		pomoDur, err := time.ParseDuration(pomoTime + "m")
 		if err != nil {
 			fmt.Println("Damn...", err)
 			os.Exit(1)
 		}
+		
 		locoDur, err := time.ParseDuration(locoTime + "m")
 		if err != nil {
 			fmt.Println("Damn...", err)
 			os.Exit(1)
 		}
-		if _, err = tea.NewProgram(model{ randomQuote: dat, pomo: true, pomoMessage: pomoText, locoMessage: locoText, duration: pomoDur, pomoCountdown: pomoDur, locoCountdown: locoDur, percent: 1.0, pomoProgress: pomoProg, locoProgress: locoProg}).Run(); err != nil {
+		
+		m := newModel(dat, pomoDur, locoDur, theme) 
+
+		if _, err = tea.NewProgram(m).Run(); err != nil {
 			fmt.Println("Oh no!", err)
 			os.Exit(1)
 		}	
@@ -240,6 +292,5 @@ func init() {
 	viper.AddConfigPath(".")
 	viper.SetConfigName("config") // Register config file name (no extension)
 	viper.SetConfigType("yaml")   // Look for specific type
-	viper.ReadInConfig()
-		
+	viper.ReadInConfig()	
 }
