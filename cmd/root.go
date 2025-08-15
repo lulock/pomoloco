@@ -39,6 +39,7 @@ const (
 type tickMsg time.Time
 
 type model struct {
+	theme styles.Theme
 	randomQuote DailyQuote
 	pomo bool
 	message string
@@ -67,14 +68,14 @@ type model struct {
 // }
 //
 func newModel(quote DailyQuote, pomoDur, locoDur time.Duration, theme styles.Theme) model {
-	pomoText := fmt.Sprintf("Go go go! %s minutes of focus.", 25)
-//	locoText := fmt.Sprintf("Go loco! %s-minute break.", 5)
+	pomoText := "Go go go! Time to focus."
 
 	prog := progress.New(progress.WithScaledGradient(theme.ColourOne, theme.ColourTwo), progress.WithoutPercentage())
 
 	prog.SetPercent(1.0)
 
-	m := model{ 
+	m := model{
+		theme: theme,
 		randomQuote: quote, 
 		pomo: true, 
 		message: pomoText, 
@@ -94,18 +95,22 @@ func (m *model) nextSession() {
 	session := "Pomodoro session"
 	beeep.AppName = "Pomoloco"
 	m.percent = 1.0
+	width := m.progressBar.Width
 	if m.pomo {
 		session = "Pomodoro session"
 		m.pomo = false
 		m.timeLeft = m.locoDuration
 		m.message = "Go loco! Time for a break."
+		m.progressBar = progress.New(progress.WithScaledGradient(m.theme.ColourTwo, m.theme.ColourOne), progress.WithoutPercentage())
 	} else {
 		session = "Break"
 		m.pomo = true
 		m.timeLeft = m.pomoDuration
 		m.message = "Go go go! Time to focus."
+		m.progressBar = progress.New(progress.WithScaledGradient(m.theme.ColourOne, m.theme.ColourTwo), progress.WithoutPercentage())
 	}
-
+	m.progressBar.SetPercent(1.0)
+	m.progressBar.Width = width
 	m.start = time.Now()
 
 	err := beeep.Notify("Times up!", fmt.Sprintf("%s is over.", session), "./internal/imgs/catmato.png")
@@ -128,7 +133,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		 // Cool, what was the actual key pressed?
         	switch msg.String() {
 		// These keys should exit the program.
-        	case "ctrl+c", "q":
+        	case "ctrl+c", "q", "esc":
             		return m, tea.Quit
 
 		case "n":
@@ -158,8 +163,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.percent -= float64(1.0/m.locoDuration.Seconds())
 		}
 
-		if m.percent <= 0.0 {
-			fmt.Println("OH!")
+		if m.percent < 0.0 {
 			m.nextSession()
 		}
 		return m, tickCmd()
