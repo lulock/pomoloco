@@ -136,7 +136,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         	case "ctrl+c", "q", "esc":
             		return m, tea.Quit
 
-		case "n":
+		case "n", "enter":
 			m.nextSession()
 			return m, nil
 		default:
@@ -157,15 +157,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.timeLeft -= 1 * time.Second
 		
 		if m.pomo {
+
 			m.percent -= float64(1.0/m.pomoDuration.Seconds())
+			if m.percent < 0.0 {
+				m.nextSession()
+			}
 		} else {
-
 			m.percent -= float64(1.0/m.locoDuration.Seconds())
+			if m.percent < 0.0 {
+				// wait until user starts a new session
+				m.percent = 0.0
+				//m.timeLeft, _ = time.ParseDuration("0s")
+				
+				m.message = "Break is over. Press n to start a new session."
+				
+			}
 		}
 
-		if m.percent < 0.0 {
-			m.nextSession()
-		}
 		return m, tickCmd()
 
 	default:
@@ -199,7 +207,7 @@ func (m model) View() string {
 		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
 		pad + progr + "\n\n" +
-		pad + styles.HelpStyle("Press q or ctrl-c to quit * press n to skip to next")
+		pad + styles.HelpStyle("Press q or esc to quit * press enter to skip to next")
 }
 
 func tickCmd() tea.Cmd {
@@ -218,7 +226,7 @@ var rootCmd = &cobra.Command{
 	Example usage: 
 		pomodoro --pomo=25 --loco=5 --theme=watermelon
 
-	focus for 25 minutes followed by a break of 5 minutes 3 times before prompted to write a reflection.`,
+	focus for 25 minutes followed by a break of 5 minutes.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
