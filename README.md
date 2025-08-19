@@ -17,9 +17,8 @@ A simple pomodoro CLI app written in Go.
 - [x] custom time for both pomo and loco sessions
 - [x] press any key (other than space) to cancel session
 - [x] fetch random motivational quote from zenquotes.io
-- [ ] press space bar to pause session
-- [ ] skip to next session
-- [ ] loop pomo-loco sessions
+- [x] skip to next session
+- [x] loop pomo-loco sessions
 - [ ] session title optional
 - [ ] notes / reflections optional
 - [ ] save sessions and notes in database
