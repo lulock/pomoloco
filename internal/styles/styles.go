@@ -53,8 +53,8 @@ var (
 		ColourTwo : "#d6a4a4",
 	}
 	DefaultTheme = Theme {
-		ColourOne : "#6600cc",
-		ColourTwo : "#ff9933",
+		ColourOne : "#ffffff",
+		ColourTwo : "#ffffff",
 	}
 )
 

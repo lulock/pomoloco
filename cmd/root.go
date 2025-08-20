@@ -94,22 +94,23 @@ func newModel(quote DailyQuote, pomoDur, locoDur time.Duration, theme styles.The
 func (m *model) nextSession() {
 	session := "Pomodoro session"
 	beeep.AppName = "Pomoloco"
-	m.percent = 1.0
+
 	width := m.progressBar.Width
 	if m.pomo {
 		session = "Pomodoro session"
 		m.pomo = false
-		m.timeLeft = m.locoDuration
+		
 		m.message = "Go loco! Time for a break."
 		m.progressBar = progress.New(progress.WithScaledGradient(m.theme.ColourTwo, m.theme.ColourOne), progress.WithoutPercentage())
+		m.progressBar.SetPercent(0.0)
 	} else {
 		session = "Break"
 		m.pomo = true
 		m.timeLeft = m.pomoDuration
 		m.message = "Go go go! Time to focus."
 		m.progressBar = progress.New(progress.WithScaledGradient(m.theme.ColourOne, m.theme.ColourTwo), progress.WithoutPercentage())
+		m.progressBar.SetPercent(1.0)
 	}
-	m.progressBar.SetPercent(1.0)
 	m.progressBar.Width = width
 	m.start = time.Now()
 
@@ -154,22 +155,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tickMsg:
-		m.timeLeft -= 1 * time.Second
 		
 		if m.pomo {
-
+			m.timeLeft -= 1 * time.Second
 			m.percent -= float64(1.0/m.pomoDuration.Seconds())
 			if m.percent < 0.0 {
 				m.nextSession()
 			}
 		} else {
-			m.percent -= float64(1.0/m.locoDuration.Seconds())
-			if m.percent < 0.0 {
+			m.timeLeft += 1 * time.Second
+			m.percent += float64(1.0/m.locoDuration.Seconds())
+			if m.percent > 1.1 {
 				// wait until user starts a new session
-				m.percent = 0.0
+				m.percent = 1.0
 				//m.timeLeft, _ = time.ParseDuration("0s")
 				
-				m.message = "Break is over. Press n to start a new session."
+				m.message = "Break is over. Press enter to start a new session."
 				
 			}
 		}
@@ -207,7 +208,7 @@ func (m model) View() string {
 		pad + message + "\n\n" +
 		pad + time + pad +  "*" +
 		pad + progr + "\n\n" +
-		pad + styles.HelpStyle("Press q or esc to quit * press enter to skip to next")
+		pad + styles.HelpStyle("esc to quit * enter to skip to next")
 }
 
 func tickCmd() tea.Cmd {
@@ -237,6 +238,7 @@ var rootCmd = &cobra.Command{
 
 		conftheme := viper.GetString("theme")
 		theme := styles.ThemeLookup(conftheme)
+
 		
 		dat := DailyQuote{}
 		resp, err := http.Get("https://zenquotes.io/api/random")
