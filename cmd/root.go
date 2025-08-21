@@ -99,7 +99,8 @@ func (m *model) nextSession() {
 	if m.pomo {
 		session = "Pomodoro session"
 		m.pomo = false
-		
+		m.timeLeft, _ = time.ParseDuration("0s")
+		m.percent = 0.0
 		m.message = "Go loco! Time for a break."
 		m.progressBar = progress.New(progress.WithScaledGradient(m.theme.ColourTwo, m.theme.ColourOne), progress.WithoutPercentage())
 		m.progressBar.SetPercent(0.0)
@@ -107,6 +108,7 @@ func (m *model) nextSession() {
 		session = "Break"
 		m.pomo = true
 		m.timeLeft = m.pomoDuration
+		m.percent = 1.0
 		m.message = "Go go go! Time to focus."
 		m.progressBar = progress.New(progress.WithScaledGradient(m.theme.ColourOne, m.theme.ColourTwo), progress.WithoutPercentage())
 		m.progressBar.SetPercent(1.0)
