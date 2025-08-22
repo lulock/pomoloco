@@ -138,9 +138,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// These keys should exit the program.
         	case "ctrl+c", "q", "esc":
             		return m, tea.Quit
-
 		case "n", "enter":
 			m.nextSession()
+			return m, nil
+		case "r":
+			m.randomQuote = getQuote()
 			return m, nil
 		default:
 			return m, nil
@@ -219,6 +221,23 @@ func tickCmd() tea.Cmd {
 	})
 }
 
+func getQuote() DailyQuote {
+	quote := DailyQuote{}
+	resp, err := http.Get("https://zenquotes.io/api/random")
+
+	if err != nil {
+	// offline mode ... dat just stays empty for now
+	} else {
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		err = json.Unmarshal(body, &quote)
+		if err != nil {
+			fmt.Println("could not unmarshal??")
+		}	
+	}
+	return quote
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "pomoloco",
@@ -241,21 +260,8 @@ var rootCmd = &cobra.Command{
 		conftheme := viper.GetString("theme")
 		theme := styles.ThemeLookup(conftheme)
 
-		
-		dat := DailyQuote{}
-		resp, err := http.Get("https://zenquotes.io/api/random")
+		quote := getQuote()
 
-		if err != nil {
-			// offline mode ... dat just stays empty for now
-		} else {
-			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			err = json.Unmarshal(body, &dat)
-			if err != nil {
-				fmt.Println("could not unmarshal??")
-			}	
-		}
-	
 		pomoDur, err := time.ParseDuration(pomoTime + "m")
 		if err != nil {
 			fmt.Println("Damn...", err)
@@ -268,7 +274,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		
-		m := newModel(dat, pomoDur, locoDur, theme) 
+		m := newModel(quote, pomoDur, locoDur, theme) 
 
 		if _, err = tea.NewProgram(m).Run(); err != nil {
 			fmt.Println("Oh no!", err)
