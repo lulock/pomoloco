@@ -15,14 +15,17 @@ A simple pomodoro CLI app written in Go.
 - [x] bubbletea? lipgloss? yes
 - [x] notification on end (sound?)
 - [x] custom time for both pomo and loco sessions
-- [x] press any key (other than space) to cancel session
+- [x] press esc or q to end session
 - [x] fetch random motivational quote from zenquotes.io
-- [x] skip to next session
+- [x] refresh quote when r is pressed
+- [x] skip to next session when n or enter is pressed
 - [x] loop pomo-loco sessions
+- [x] refactor out styling logic
 - [ ] session title optional
 - [ ] notes / reflections optional
 - [ ] save sessions and notes in database
-- [ ] refactor as per DRY
+- [ ] refactor out TUI / App logic
+- [ ] refactor out Viper config logic
 
 ## Contributing
 
