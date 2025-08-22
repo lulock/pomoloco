@@ -92,12 +92,9 @@ func newModel(quote DailyQuote, pomoDur, locoDur time.Duration, theme styles.The
 }
 
 func (m *model) nextSession() {
-	session := "Pomodoro session"
-	beeep.AppName = "Pomoloco"
 
 	width := m.progressBar.Width
 	if m.pomo {
-		session = "Pomodoro session"
 		m.pomo = false
 		m.timeLeft, _ = time.ParseDuration("0s")
 		m.percent = 0.0
@@ -105,7 +102,6 @@ func (m *model) nextSession() {
 		m.progressBar = progress.New(progress.WithScaledGradient(m.theme.ColourTwo, m.theme.ColourOne), progress.WithoutPercentage())
 		m.progressBar.SetPercent(0.0)
 	} else {
-		session = "Break"
 		m.pomo = true
 		m.timeLeft = m.pomoDuration
 		m.percent = 1.0
@@ -115,15 +111,24 @@ func (m *model) nextSession() {
 	}
 	m.progressBar.Width = width
 	m.start = time.Now()
+} 
 
+func (m *model) notify() {
+	session := ""
+	if m.pomo {
+		session = "Pomodoro session"
+	} else {
+		session = "Break"
+	}
+
+	beeep.AppName = "Pomoloco"
+	
 	err := beeep.Notify("Times up!", fmt.Sprintf("%s is over.", session), "./internal/imgs/catmato.png")
 
 	if err != nil {
 		panic(err)
 	}
-
-} 
-
+}
 
 // because m implements Init from the tea.Model interface ... it's a tea.Model 
 func (m model) Init() tea.Cmd {
@@ -164,16 +169,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.timeLeft -= 1 * time.Second
 			m.percent -= float64(1.0/m.pomoDuration.Seconds())
 			if m.percent < 0.0 {
+				m.notify()
 				m.nextSession()
 			}
 		} else {
 			m.timeLeft += 1 * time.Second
 			m.percent += float64(1.0/m.locoDuration.Seconds())
-			if m.percent > 1.1 {
+
+			if m.percent > 1.0 {
 				// wait until user starts a new session
+				if !strings.Contains(m.message, "Break is over.") {
+					m.notify()	
+				} // else already notified.
 				m.percent = 1.0
 				//m.timeLeft, _ = time.ParseDuration("0s")
-				
 				m.message = "Break is over. Press enter to start a new session."
 				
 			}
