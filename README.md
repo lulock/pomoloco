@@ -1,8 +1,22 @@
 # Pomoloco :tomato:
 A simple pomodoro CLI app written in Go.
 
-![Animated progress bar counting down from right (green) to left (pink) with motivational quote.](pomo.gif)
+```
+username@hostname:~/pomoloco$ ./pomoloco
 
+  ┌────────────────────────────────────────┐
+  │                                        │
+  │  Rivers know this: there is no hurry.  │
+  │  We shall get there some day.          │
+  │    -- A.A. Milne                       │
+  │                                        │
+  └────────────────────────────────────────┘
+
+  Go go go! Time to focus.
+
+  13:27  *  ███████████████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+```
 ## Roadmap
 ### mvp TODOs
 - [x] pomo command: default 25-minute work session
