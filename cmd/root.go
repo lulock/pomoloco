@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
+	//"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/lulock/pomoloco/internal/styles"
@@ -67,7 +68,7 @@ type model struct {
 // 	percent  float64
 // }
 //
-func newModel(quote DailyQuote, pomoDur, locoDur time.Duration, theme styles.Theme) model {
+func newModel(pomoDur, locoDur time.Duration, theme styles.Theme) model {
 	pomoText := "Go go go! Time to focus."
 
 	prog := progress.New(progress.WithScaledGradient(theme.ColourOne, theme.ColourTwo), progress.WithoutPercentage())
@@ -76,7 +77,7 @@ func newModel(quote DailyQuote, pomoDur, locoDur time.Duration, theme styles.The
 
 	m := model{
 		theme: theme,
-		randomQuote: quote, 
+	//	randomQuote: quote, 
 		pomo: true, 
 		message: pomoText, 
 		pomoDuration: pomoDur, 
@@ -132,11 +133,17 @@ func (m *model) notify() {
 
 // because m implements Init from the tea.Model interface ... it's a tea.Model 
 func (m model) Init() tea.Cmd {
-	return tickCmd()
+	return tea.Batch(
+		tickCmd(),
+		getQuote(),
+	)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case DailyQuote:
+		m.randomQuote = msg
+		return m, nil
 	case tea.KeyMsg:
 		 // Cool, what was the actual key pressed?
         	switch msg.String() {
@@ -147,8 +154,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.nextSession()
 			return m, nil
 		case "r":
-			m.randomQuote = getQuote()
-			return m, nil
+			
+			return m, getQuote()
 		default:
 			return m, nil
 		}
@@ -230,12 +237,12 @@ func tickCmd() tea.Cmd {
 	})
 }
 
-func getQuote() DailyQuote {
+func getQuote() tea.Cmd {
 	quote := DailyQuote{}
 	resp, err := http.Get("https://zenquotes.io/api/random")
 
 	if err != nil {
-	// offline mode ... dat just stays empty for now
+	// offline mode ... quote stays empty
 	} else {
 		defer resp.Body.Close()
 		body, err := io.ReadAll(resp.Body)
@@ -244,9 +251,10 @@ func getQuote() DailyQuote {
 			fmt.Println("could not unmarshal??")
 		}	
 	}
-	return quote
+	return func() tea.Msg {
+		return quote
+	}
 }
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "pomoloco",
@@ -269,8 +277,6 @@ var rootCmd = &cobra.Command{
 		conftheme := viper.GetString("theme")
 		theme := styles.ThemeLookup(conftheme)
 
-		quote := getQuote()
-
 		pomoDur, err := time.ParseDuration(pomoTime + "m")
 		if err != nil {
 			fmt.Println("Damn...", err)
@@ -283,7 +289,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		
-		m := newModel(quote, pomoDur, locoDur, theme) 
+		m := newModel(pomoDur, locoDur, theme) 
 
 		if _, err = tea.NewProgram(m).Run(); err != nil {
 			fmt.Println("Oh no!", err)
