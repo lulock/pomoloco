@@ -40,6 +40,7 @@ username@hostname:~/pomoloco$ ./pomoloco
 - [ ] save sessions and notes in database
 - [ ] refactor out TUI / App logic
 - [ ] refactor out Viper config logic
+- [ ] add teatests
 
 ## Contributing
 
