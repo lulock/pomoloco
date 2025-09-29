@@ -127,7 +127,7 @@ func (m *model) notify() {
 	err := beeep.Notify("Times up!", fmt.Sprintf("%s is over.", session), "./internal/imgs/catmato.png")
 
 	if err != nil {
-		panic(err)
+		// ignore ... no notification required
 	}
 }
 
