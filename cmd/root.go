@@ -1,14 +1,13 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
-	"os"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"os"
 	"strings"
 	"time"
 
@@ -18,19 +17,19 @@ import (
 
 	"github.com/lulock/pomoloco/internal/styles"
 
-	"net/http"
-	"io"
 	"encoding/json"
 	"github.com/gen2brain/beeep"
+	"io"
+	"net/http"
 )
 
 type DailyQuote []struct {
-	Quote string `json:"q"`
+	Quote  string `json:"q"`
 	Author string `json:"a"`
-	H string `json:"h"`
+	H      string `json:"h"`
 }
 
-// Building upon Bubbleatea's simple rendering of a progrerss bar in a "pure" fashion. 
+// Building upon Bubbleatea's simple rendering of a progrerss bar in a "pure" fashion.
 // This is a pomodoro app that generates visual countdowns for pomo "focus" sessions and loco "breaks"
 const (
 	padding  = 2
@@ -40,34 +39,33 @@ const (
 type tickMsg time.Time
 
 type model struct {
-	theme styles.Theme
-	randomQuote DailyQuote
-	pomo bool
-	message string
+	theme        styles.Theme
+	randomQuote  DailyQuote
+	pomo         bool
+	message      string
 	pomoDuration time.Duration
 	locoDuration time.Duration
-	start time.Time
-	timeLeft time.Duration
-	progressBar progress.Model
-	percent float64
+	start        time.Time
+	timeLeft     time.Duration
+	progressBar  progress.Model
+	percent      float64
 }
 
-// type model struct {
-// 	randomQuote DailyQuote
-// 	pomo bool
+//	type model struct {
+//		randomQuote DailyQuote
+//		pomo bool
 //
-// 	pomoMessage string
-// 	locoMessage string
-// 	initPomoCountdown time.Duration
-// 	initLocoCountdown time.Duration
-// 	pomoCountdown time.Duration
-// 	locoCountdown time.Duration
-// 	pomoProgress progress.Model
-// 	locoProgress progress.Model
-// 	duration time.Duration
-// 	percent  float64
-// }
-//
+//		pomoMessage string
+//		locoMessage string
+//		initPomoCountdown time.Duration
+//		initLocoCountdown time.Duration
+//		pomoCountdown time.Duration
+//		locoCountdown time.Duration
+//		pomoProgress progress.Model
+//		locoProgress progress.Model
+//		duration time.Duration
+//		percent  float64
+//	}
 func newModel(pomoDur, locoDur time.Duration, theme styles.Theme) model {
 	pomoText := "Go go go! Time to focus."
 
@@ -75,17 +73,23 @@ func newModel(pomoDur, locoDur time.Duration, theme styles.Theme) model {
 
 	prog.SetPercent(1.0)
 
+	defaultQuote := DailyQuote{
+		{
+			Quote:  "You can do this! ✨",
+			Author: "Lulock",
+		},
+	}
 	m := model{
-		theme: theme,
-	//	randomQuote: quote, 
-		pomo: true, 
-		message: pomoText, 
-		pomoDuration: pomoDur, 
+		theme:        theme,
+		randomQuote:  defaultQuote,
+		pomo:         true,
+		message:      pomoText,
+		pomoDuration: pomoDur,
 		locoDuration: locoDur,
-		timeLeft: pomoDur,
-		progressBar: prog,
-		percent: 1.0,
-		start: time.Now(),
+		timeLeft:     pomoDur,
+		progressBar:  prog,
+		percent:      1.0,
+		start:        time.Now(),
 	}
 
 	return m
@@ -112,7 +116,7 @@ func (m *model) nextSession() {
 	}
 	m.progressBar.Width = width
 	m.start = time.Now()
-} 
+}
 
 func (m *model) notify() {
 	session := ""
@@ -123,7 +127,7 @@ func (m *model) notify() {
 	}
 
 	beeep.AppName = "Pomoloco"
-	
+
 	err := beeep.Notify("Times up!", fmt.Sprintf("%s is over.", session), "./internal/imgs/catmato.png")
 
 	if err != nil {
@@ -131,7 +135,7 @@ func (m *model) notify() {
 	}
 }
 
-// because m implements Init from the tea.Model interface ... it's a tea.Model 
+// because m implements Init from the tea.Model interface ... it's a tea.Model
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		tickCmd(),
@@ -145,24 +149,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.randomQuote = msg
 		return m, nil
 	case tea.KeyMsg:
-		 // Cool, what was the actual key pressed?
-        	switch msg.String() {
+		// Cool, what was the actual key pressed?
+		switch msg.String() {
 		// These keys should exit the program.
-        	case "ctrl+c", "q", "esc":
-            		return m, tea.Quit
+		case "ctrl+c", "q", "esc":
+			return m, tea.Quit
 		case "n", "enter":
 			m.nextSession()
 			return m, nil
 		case "r":
-			
+
 			return m, getQuote()
 		default:
 			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
-		
-		m.progressBar.Width = msg.Width - padding * 3 - 6
+
+		m.progressBar.Width = msg.Width - padding*3 - 6
 
 		if m.progressBar.Width > maxWidth {
 			m.progressBar.Width = maxWidth
@@ -171,27 +175,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tickMsg:
-		
+
 		if m.pomo {
 			m.timeLeft -= 1 * time.Second
-			m.percent -= float64(1.0/m.pomoDuration.Seconds())
+			m.percent -= float64(1.0 / m.pomoDuration.Seconds())
 			if m.percent < 0.0 {
 				m.notify()
 				m.nextSession()
 			}
 		} else {
 			m.timeLeft += 1 * time.Second
-			m.percent += float64(1.0/m.locoDuration.Seconds())
+			m.percent += float64(1.0 / m.locoDuration.Seconds())
 
 			if m.percent > 1.0 {
 				// wait until user starts a new session
 				if !strings.Contains(m.message, "Break is over.") {
-					m.notify()	
+					m.notify()
 				} // else already notified.
 				m.percent = 1.0
 				//m.timeLeft, _ = time.ParseDuration("0s")
 				m.message = "Break is over. Press enter to start a new session."
-				
+
 			}
 		}
 
@@ -210,23 +214,23 @@ func (m model) View() string {
 	var progr string
 	var quote string
 
-	if len(m.randomQuote) > 0{
-		quote = styles.QuoteStyle(m.randomQuote[0].Quote + fmt.Sprintf("\n  -- %s", m.randomQuote[0].Author)) + "\n\n"
+	if len(m.randomQuote) > 0 {
+		quote = styles.QuoteStyle(m.randomQuote[0].Quote+fmt.Sprintf("\n  -- %s", m.randomQuote[0].Author)) + "\n\n"
 	} else {
 		quote = ""
 	}
-	
+
 	message = m.message
 	mins = m.timeLeft / time.Minute
 	sec = (m.timeLeft % time.Minute) / time.Second // remaining duration after subtracting full minutes / seconds gives remaining seconds
 	progr = m.progressBar.ViewAs(m.percent)
-	
+
 	pad := strings.Repeat(" ", padding)
 	time := fmt.Sprintf("%02d:%02d", mins, sec)
 	return "\n" +
 		quote +
 		pad + message + "\n\n" +
-		pad + time + pad +  "*" +
+		pad + time + pad + "*" +
 		pad + progr + "\n\n" +
 		pad + styles.HelpStyle("esc to quit * enter to skip to next")
 }
@@ -238,23 +242,25 @@ func tickCmd() tea.Cmd {
 }
 
 func getQuote() tea.Cmd {
-	quote := DailyQuote{}
-	resp, err := http.Get("https://zenquotes.io/api/random")
 
-	if err != nil {
-	// offline mode ... quote stays empty
-	} else {
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
-		err = json.Unmarshal(body, &quote)
-		if err != nil {
-			fmt.Println("could not unmarshal??")
-		}	
-	}
 	return func() tea.Msg {
+		quote := DailyQuote{}
+		resp, err := http.Get("https://zenquotes.io/api/random")
+
+		if err != nil {
+			// offline mode ... quote stays empty
+		} else {
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			err = json.Unmarshal(body, &quote)
+			if err != nil {
+				fmt.Println("could not unmarshal??")
+			}
+		}
 		return quote
 	}
 }
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "pomoloco",
@@ -272,7 +278,7 @@ var rootCmd = &cobra.Command{
 		// TODO: a lot of duplicate code here that needs refactoring!
 
 		pomoTime, _ := cmd.Flags().GetString("pomo")
-		locoTime, _ := cmd.Flags().GetString("loco")	
+		locoTime, _ := cmd.Flags().GetString("loco")
 
 		conftheme := viper.GetString("theme")
 		theme := styles.ThemeLookup(conftheme)
@@ -282,19 +288,19 @@ var rootCmd = &cobra.Command{
 			fmt.Println("Damn...", err)
 			os.Exit(1)
 		}
-		
+
 		locoDur, err := time.ParseDuration(locoTime + "m")
 		if err != nil {
 			fmt.Println("Damn...", err)
 			os.Exit(1)
 		}
-		
-		m := newModel(pomoDur, locoDur, theme) 
+
+		m := newModel(pomoDur, locoDur, theme)
 
 		if _, err = tea.NewProgram(m).Run(); err != nil {
 			fmt.Println("Oh no!", err)
 			os.Exit(1)
-		}	
+		}
 	},
 }
 
@@ -329,5 +335,5 @@ func init() {
 	viper.AddConfigPath(".")
 	viper.SetConfigName("config") // Register config file name (no extension)
 	viper.SetConfigType("yaml")   // Look for specific type
-	viper.ReadInConfig()	
+	viper.ReadInConfig()
 }
