@@ -5,11 +5,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/charmbracelet/bubbles/progress"
 	//"github.com/charmbracelet/bubbles/spinner"
@@ -18,9 +19,10 @@ import (
 	"github.com/lulock/pomoloco/internal/styles"
 
 	"encoding/json"
-	"github.com/gen2brain/beeep"
 	"io"
 	"net/http"
+
+	"github.com/gen2brain/beeep"
 )
 
 type DailyQuote []struct {
@@ -245,7 +247,11 @@ func getQuote() tea.Cmd {
 
 	return func() tea.Msg {
 		quote := DailyQuote{}
-		resp, err := http.Get("https://zenquotes.io/api/random")
+
+		client := http.Client{
+			Timeout: time.Second * 5,
+		}
+		resp, err := client.Get("https://zenquotes.io/api/random")
 
 		if err != nil {
 			// offline mode ... quote stays empty
