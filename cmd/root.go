@@ -51,6 +51,7 @@ type model struct {
 	timeLeft     time.Duration
 	progressBar  progress.Model
 	percent      float64
+	client       *http.Client
 }
 
 //	type model struct {
@@ -92,6 +93,7 @@ func newModel(pomoDur, locoDur time.Duration, theme styles.Theme) model {
 		progressBar:  prog,
 		percent:      1.0,
 		start:        time.Now(),
+		client:       &http.Client{Timeout: 5 * time.Second},
 	}
 
 	return m
@@ -139,9 +141,10 @@ func (m *model) notify() {
 
 // because m implements Init from the tea.Model interface ... it's a tea.Model
 func (m model) Init() tea.Cmd {
+
 	return tea.Batch(
 		tickCmd(),
-		getQuote(),
+		getQuote(m.client),
 	)
 }
 
@@ -160,8 +163,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.nextSession()
 			return m, nil
 		case "r":
-
-			return m, getQuote()
+			return m, getQuote(m.client)
 		default:
 			return m, nil
 		}
@@ -243,14 +245,11 @@ func tickCmd() tea.Cmd {
 	})
 }
 
-func getQuote() tea.Cmd {
+func getQuote(client *http.Client) tea.Cmd {
 
 	return func() tea.Msg {
 		quote := DailyQuote{}
 
-		client := http.Client{
-			Timeout: time.Second * 5,
-		}
 		resp, err := client.Get("https://zenquotes.io/api/random")
 
 		if err != nil {
